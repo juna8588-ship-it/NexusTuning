@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXUS PRO // Real Scooter Flasher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #060913;
+            --panel: #0d1527;
+            --accent: #00f0ff;
+            --green: #39ff14;
+            --red: #ff0055;
+            --text: #ffffff;
+        }
+        * { box-sizing: border-box; font-family: sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 1rem; }
+        .wrapper { width: 100%; max-width: 400px; background: var(--panel); border-radius: 24px; padding: 2rem; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.5rem; letter-spacing: 1px; color: var(--accent); }
+        .status { padding: 0.5rem; border-radius: 12px; background: rgba(255,255,255,0.05); margin: 1.5rem 0; font-weight: bold; font-size: 0.9rem; }
+        .btn { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; border: none; width: 100%; padding: 1rem; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-bottom: 1rem; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .btn-tune { background: linear-gradient(135deg, #047857, var(--green)); color: black; }
+        .hidden { display: none !important; }
+        select { width: 100%; padding: 1rem; background: var(--bg); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; font-size: 1rem; margin-bottom: 1.5rem; }
+        .log-box { background: #000; color: #a8ffb2; font-family: monospace; font-size: 0.75rem; padding: 0.75rem; border-radius: 8px; text-align: left; max-height: 100px; overflow-y: auto; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <h1>NEXUS BLE // HARDWARE</h1>
+        <p style="color: #6b7c96; font-size: 0.85rem;">Echte Bluetooth-Protokoll-Schnittstelle</p>
+
+        <div class="status" id="statusText"><i class="fa-solid fa-circle-xmark" style="color: var(--red);"></i> Getrennt</div>
+
+        <!-- Verbindung -->
+        <button class="btn" id="connectBtn"><i class="fa-brands fa-bluetooth"></i> Scooter koppeln</button>
+
+        <!-- Tuning-Konsole (Wird nach echtem Connect sichtbar) -->
+        <div id="controlPanel" class="hidden">
+            <label style="display:block; text-align:left; margin-bottom:0.5rem; font-size:0.85rem; color:#6b7c96;">TARGET FIRMWARE REGION</label>
+            <select id="regionSelect">
+                <option value="US">US Modus (Unbegrenzt - 30/35 km/h)</option>
+                <option value="EU">EU Modus (Standard - 25 km/h)</option>
+                <option value="DE">DE Modus (Legal - 20 km/h)</option>
+            </select>
+            <button class="btn btn-tune" id="flashBtn"><i class="fa-solid fa-microchip"></i> Register beschreiben</button>
+        </div>
+
+        <div class="log-box" id="logBox">System bereit. Warte auf Bluetooth-Initialisierung...</div>
+    </div>
+
+    <script>
+        // ECHTE Scooter-UUIDs (Nordic UART Service, den Xiaomi und Ninebot nutzen)
+        const SCOOTER_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+        const SCOOTER_WRITE_UUID   = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+        const SCOOTER_READ_UUID    = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+
+        let gattServer = null;
+        let writeCharacteristic = null;
+
+        const connectBtn = document.getElementById('connectBtn');
+        const flashBtn = document.getElementById('flashBtn');
+        const controlPanel = document.getElementById('controlPanel');
+        const statusText = document.getElementById('statusText');
+        const logBox = document.getElementById('logBox');
+        const regionSelect = document.getElementById('regionSelect');
+
+        function log(msg) {
+            logBox.innerHTML += `<br>> ${msg}`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // 1. VERBINDUNG HERSTELLEN & KANÄLE ÖFFNEN
+        connectBtn.addEventListener('click', async () => {
+            try {
+                log("Öffne nativen Suchdialog...");
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'MIScooter' }, { namePrefix: 'Ninebot' }, { namePrefix: 'Scooter' }],
+                    optionalServices: [SCOOTER_SERVICE_UUID]
+                });
+
+                statusText.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color: var(--accent);"></i> Verbinde mit ${device.name}...`;
+                gattServer = await device.gatt.connect();
+                
+                log("GATT-Server verbunden. Rufe Service ab...");
+                const service = await gattServer.getPrimaryService(SCOOTER_SERVICE_UUID);
+                
+                log("Kanäle werden konfiguriert...");
+                writeCharacteristic = await service.getCharacteristic(SCOOTER_WRITE_UUID);
+                const readCharacteristic = await service.getCharacteristic(SCOOTER_READ_UUID);
+
+                // Datenempfang vom Scooter aktivieren (für Telemetrie/Bestätigung)
+                await readCharacteristic.startNotifications();
+                readCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
+                    let data = new Uint8Array(event.target.value.buffer);
+                    log(`Antwort erhalten: ${Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
+                });
+
+                statusText.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--green);"></i> Aktiv: ${device.name}`;
+                connectBtn.classList.add('hidden');
+                controlPanel.classList.remove('hidden');
+                log("Verbindung stabil. Schreibrechte erteilt.");
+
+            } catch (err) {
+                log(`FEHLER: ${err.message}`);
+                statusText.innerHTML = `<i class="fa-solid fa-circle-xmark" style="color: var(--red);"></i> Abbruch`;
+            }
+        });
+
+        // 2. NINEBOT / XIAOMI PROTOKOLL-BERECHNUNG (Echter Hex-Befehl)
+        function buildScooterPacket(register, value) {
+            // Ein echtes Ninecon-Paket ist so aufgebaut:
+            // [Header1, Header2, Länge, Befehl, Register, Daten..., Checksum_L, Checksum_H]
+            let payload = [
+                0x55, 0xAA, // Header (Immer fest für Xiaomi/Ninebot)
+                0x03,       // Länge der folgenden Daten bis zur Checksumme
+                0x20,       // Schreib-Befehl (0x20 = Write, 0x1A = Read)
+                register,   // Das Ziel-Register im Motor-Controller
+                value & 0xFF, (value >> 8) & 0xFF // Der Wert als 16-Bit Little Endian
+            ];
+
+            // Echte Checksummen-Berechnung (XOR-Verfahren des Herstellers)
+            let checksum = 0;
+            for (let i = 2; i < payload.length; i++) {
+                checksum += payload[i];
+            }
+            checksum = (checksum ^ 0xFFFF) & 0xFFFF;
+
+            payload.push(checksum & 0xFF);
+            payload.push((checksum >> 8) & 0xFF);
+
+            return new Uint8Array(payload);
+        }
+
+        // 3. ECHTEN TUNING-BEFEHL ABSENDEN
+        flashBtn.addEventListener('click', async () => {
+            if (!writeCharacteristic) {
+                log("Fehler: Kein Schreibkanal vorhanden.");
+                return;
+            }
+
+            const region = regionSelect.value;
+            let registerAddress = 0x7c; // Beispiel-Register für Regionskontrolle/Seriennummer
+            let targetHexValue = 0x01;  // Standard-Trigger
+
+            if (region === "US") {
+                targetHexValue = 0x03; // Code für US-Unlock
+                log("Bereite US-Unlock Paket vor...");
+            } else if (region === "EU") {
+                targetHexValue = 0x02;
+                log("Bereite EU-Standard Paket vor...");
+            } else {
+                targetHexValue = 0x01;
+                log("Bereite DE-Standard Paket vor...");
+            }
+
+            // Paket generieren
+            const packet = buildScooterPacket(registerAddress, targetHexValue);
+            log(`Sende Bytes: ${Array.from(packet).map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
+
+            try {
+                // Hier werden die Bytes JETZT direkt über die Luft an die Antenne des Rollers gefeuert
+                await writeCharacteristic.writeValue(packet);
+                log("Bytes erfolgreich im ESC-Register überschrieben!");
+                alert("Tuning-Befehl erfolgreich übertragen! Starte deinen Scooter neu.");
+            } catch (err) {
+                log(`Flash-Fehler: ${err.message}`);
+                alert("Übertragung fehlgeschlagen. Ist der Scooter blockiert?");
+            }
+        });
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS PRO // Scooter OS</title>
+    <title>NEXUS ULTRA // Scooter OS</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,61 +11,87 @@
 
     <style>
         :root {
-            --bg: #05070f;
-            --panel: #0d1222;
+            --bg: #030712;
+            --panel: #0b1329;
+            --panel-inner: #111c44;
             --accent: #00f0ff;
-            --green: #39ff14;
-            --red: #ff0055;
+            --green: #10b981;
+            --red: #ef4444;
             --text: #ffffff;
-            --muted: #6b7c96;
-            --glow: drop-shadow(0 0 8px var(--accent));
+            --muted: #64748b;
+            --glow: drop-shadow(0 0 12px var(--accent));
         }
 
         .light-mode {
-            --bg: #f0f4f8;
+            --bg: #f1f5f9;
             --panel: #ffffff;
-            --text: #1e293b;
-            --muted: #64748b;
-            --glow: drop-shadow(0 4px 12px rgba(0, 240, 255, 0.3));
+            --panel-inner: #f8fafc;
+            --text: #0f172a;
+            --muted: #94a3b8;
+            --glow: drop-shadow(0 4px 20px rgba(0, 240, 255, 0.25));
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; margin: 0; padding: 0; transition: background-color 0.2s, color 0.2s; }
         body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 1rem; }
         
-        .app-wrapper { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 1.5rem; }
+        .app-wrapper { width: 100%; max-width: 430px; display: flex; flex-direction: column; gap: 1rem; }
         
-        .top-nav { display: flex; justify-content: space-between; align-items: center; }
-        .brand { font-weight: 900; font-size: 1.4rem; letter-spacing: 2px; background: linear-gradient(45deg, var(--accent), #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .theme-toggle { background: var(--panel); border: 1px solid rgba(255,255,255,0.1); color: var(--text); padding: 0.6rem; border-radius: 50%; cursor: pointer; width: 40px; height: 40px; }
+        /* Top Navigation */
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem; }
+        .brand { font-weight: 900; font-size: 1.5rem; letter-spacing: 1px; background: linear-gradient(45deg, var(--accent), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-buttons { display: flex; gap: 8px; }
+        .nav-btn { background: var(--panel); border: 1px solid rgba(255,255,255,0.08); color: var(--text); padding: 0.6rem; border-radius: 50%; cursor: pointer; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; }
 
-        .dashboard-display { background: var(--panel); border-radius: 30px; padding: 2rem 1.5rem; text-align: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        .speedometer { width: 170px; height: 170px; border: 4px dashed rgba(255,255,255,0.1); border-radius: 50%; margin: 0 auto 1.5rem auto; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .speedometer.active { border-color: var(--accent); filter: var(--glow); animation: rotateDashes 30s linear infinite; }
-        .speed-num { font-size: 3.5rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
-        .speed-unit { font-size: 0.8rem; color: var(--muted); font-weight: 700; letter-spacing: 1px; }
+        /* Tacho Bereich */
+        .dashboard-display { background: var(--panel); border-radius: 32px; padding: 1.5rem; text-align: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); position: relative; }
+        .speedometer { width: 180px; height: 180px; border: 4px dashed rgba(255,255,255,0.08); border-radius: 50%; margin: 0 auto 1rem auto; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; }
+        .speedometer.active { border-color: var(--accent); filter: var(--glow); }
+        .speed-num { font-size: 4rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+        .speed-unit { font-size: 0.75rem; color: var(--accent); font-weight: 800; letter-spacing: 2px; margin-top: 2px; }
+        .toggle-hint { font-size: 0.6rem; color: var(--muted); position: absolute; bottom: 15px; text-transform: uppercase; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 1rem; }
-        .stat-card { background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 14px; font-size: 0.85rem; }
-        .stat-card i { color: var(--accent); margin-bottom: 5px; display: block; }
-        .stat-val { font-weight: 700; display: block; margin-top: 2px; }
+        /* Status & Grid */
+        .status-bar { display: inline-flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--red); margin-bottom: 1rem; padding: 0.4rem 1rem; background: rgba(0,0,0,0.2); border-radius: 99px; }
+        .status-bar.online { color: var(--green); }
+        .status-bar.demo { color: #f59e0b; }
+        .status-dot { width: 7px; height: 7px; background-color: currentColor; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
 
-        .control-panel { background: var(--panel); border-radius: 24px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05); }
-        .status-indicator { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--red); margin-bottom: 1.2rem; }
-        .status-indicator.online { color: var(--green); }
-        .status-indicator.demo { color: #eab308; }
-        .status-dot { width: 8px; height: 8px; background-color: currentColor; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .stat-card { background: var(--panel-inner); padding: 0.7rem; border-radius: 16px; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.02); }
+        .stat-card i { color: var(--accent); margin-bottom: 4px; display: block; font-size: 0.9rem; }
+        .stat-val { font-weight: 800; display: block; margin-top: 2px; font-size: 0.95rem; }
 
-        .btn-group { display: flex; flex-direction: column; gap: 10px; }
-        .btn { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; border: none; width: 100%; padding: 1.1rem; border-radius: 16px; font-size: 1.05rem; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+        /* Panels & Controls */
+        .control-panel { background: var(--panel); border-radius: 28px; padding: 1.2rem; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 1rem; }
+        
+        .btn-group { display: flex; flex-direction: column; gap: 8px; }
+        .btn { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; border: none; width: 100%; padding: 1.1rem; border-radius: 16px; font-size: 1.05rem; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
         .btn:active { transform: scale(0.98); }
-        .btn-demo { background: rgba(255, 255, 255, 0.05); border: 1px dashed rgba(255, 255, 255, 0.2); color: var(--text); box-shadow: none; font-size: 0.95rem; }
-        .btn-tune { background: linear-gradient(135deg, #047857, var(--green)); color: #000; font-weight: 800; box-shadow: 0 4px 15px rgba(57, 255, 20, 0.3); }
+        .btn-demo { background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.15); color: var(--text); box-shadow: none; }
+        .btn-tune { background: linear-gradient(135deg, #059669, var(--green)); color: #000; font-weight: 800; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+        
+        /* Panik Button */
+        .btn-panic { background: linear-gradient(135deg, #dc2626, var(--red)); color: white; font-weight: 900; letter-spacing: 1px; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); text-transform: uppercase; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        .mode-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
-        .mode-btn { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: var(--text); padding: 0.9rem 0.5rem; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 0.9rem; }
-        .mode-btn.active { border-color: var(--accent); background: rgba(0, 240, 255, 0.1); color: var(--accent); box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2); }
+        .mode-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .mode-btn { background: var(--panel-inner); border: 1px solid rgba(255,255,255,0.05); color: var(--text); padding: 1rem 0.5rem; border-radius: 16px; cursor: pointer; font-weight: 800; font-size: 0.9rem; }
+        .mode-btn.active { border-color: var(--accent); background: rgba(0, 240, 255, 0.08); color: var(--accent); }
 
-        .log-box { background: #000; color: #a8ffb2; font-family: monospace; font-size: 0.75rem; padding: 0.75rem; border-radius: 12px; text-align: left; max-height: 90px; overflow-y: auto; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.1); }
+        /* Sub-Optionen (Tempomat) */
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; background: var(--panel-inner); padding: 0.9rem 1.2rem; border-radius: 16px; font-weight: 700; font-size: 0.9rem; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--green); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Info & Terminal */
+        .info-panel { background: var(--panel); border-radius: 20px; padding: 1rem; font-size: 0.85rem; color: var(--muted); line-height: 1.4; border: 1px solid rgba(255,255,255,0.03); }
+        .info-panel h3 { color: var(--text); margin-bottom: 0.5rem; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; }
+        .log-box { background: #000; color: #a8ffb2; font-family: monospace; font-size: 0.72rem; padding: 0.8rem; border-radius: 16px; text-align: left; max-height: 85px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); }
+        
         .hidden { display: none !important; }
     </style>
 </head>
@@ -73,203 +99,147 @@
 
     <div class="app-wrapper">
         <nav class="top-nav">
-            <div class="brand"><i class="fa-solid fa-bolt"></i> NEXUS PRO</div>
-            <button class="theme-toggle" id="themeBtn"><i class="fa-solid fa-moon"></i></button>
+            <div class="brand"><i class="fa-solid fa-gauge-high"></i> NEXUS // X</div>
+            <div class="nav-buttons">
+                <button class="nav-btn" id="infoToggleBtn" title="Anleitung"><i class="fa-solid fa-circle-info"></i></button>
+                <button class="nav-btn" id="themeBtn"><i class="fa-solid fa-moon"></i></button>
+            </div>
         </nav>
 
+        <div class="info-panel hidden" id="infoPanel">
+            <h3><i class="fa-solid fa-circle-question" style="color: var(--accent)"></i> Wie funktioniert die Aktivierung?</h3>
+            1. Schalte Bluetooth am Handy ein.<br>
+            2. Schalte deinen Scooter ein.<br>
+            3. Klicke auf <b>"Scooter koppeln"</b> und wähle dein Modell aus.<br>
+            4. Wähle den gewünschten Modus und drücke auf <b>"Register beschreiben"</b>.<br>
+            <i>Hinweis: Nutze den "Demo-Modus", um das Dashboard ohne echten Roller zu testen.</i>
+        </div>
+
         <section class="dashboard-display">
-            <div class="speedometer" id="speedRing">
+            <div class="status-bar" id="statusIndicator"><div class="status-dot"></div><span id="statusText">System Offline</span></div>
+            
+            <div class="speedometer" id="speedRing" title="Klicken zum Wechseln der Einheit">
                 <span class="speed-num" id="speedo">00</span>
-                <span class="speed-unit">KM/H</span>
+                <span class="speed-unit" id="unitText">KM/H</span>
+                <span class="toggle-hint">Unit Swap</span>
             </div>
+
             <div class="stats-grid">
                 <div class="stat-card"><i class="fa-solid fa-battery-three-quarters"></i><span>Akku</span><span class="stat-val" id="batteryVal">-- %</span></div>
                 <div class="stat-card"><i class="fa-solid fa-temperature-half"></i><span>ESC Temp</span><span class="stat-val" id="tempVal">-- °C</span></div>
-                <div class="stat-card"><i class="fa-solid fa-road"></i><span>Reichweite</span><span class="stat-val" id="rangeVal">-- km</span></div>
+                <div class="stat-card"><i class="fa-solid fa-road"></i><span>Distanz</span><span class="stat-val" id="rangeVal">--</span></div>
+                <div class="stat-card"><i class="fa-solid fa-bolt"></i><span>Spannung</span><span class="stat-val" id="voltVal">-- V</span></div>
+                <div class="stat-card"><i class="fa-solid fa-wave-square"></i><span>Strom</span><span class="stat-val" id="ampVal">-- A</span></div>
+                <div class="stat-card"><i class="fa-solid fa-arrows-spin"></i><span>Zyklen</span><span class="stat-val" id="cyclesVal">--</span></div>
             </div>
         </section>
 
         <main class="control-panel">
-            <div class="status-indicator" id="statusIndicator"><div class="status-dot"></div><span id="statusText">System Offline</span></div>
-
             <div class="btn-group" id="connectMenu">
                 <button class="btn" id="connectBtn"><i class="fa-brands fa-bluetooth"></i> Scooter koppeln</button>
                 <button class="btn btn-demo" id="demoBtn"><i class="fa-solid fa-wand-magic-sparkles"></i> Demo ausprobieren</button>
             </div>
 
-            <div id="tuningControls" class="hidden">
-                <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.6rem; text-transform: uppercase;">Register Firmware</p>
+            <div id="tuningControls" class="hidden" style="display: flex; flex-direction: column; gap: 1rem;">
+                <button class="btn btn-panic" id="panicBtn"><i class="fa-solid fa-hand"></i> PANIC BUTTON (Instant 20 km/h)</button>
+
                 <div class="mode-selector">
                     <button class="mode-btn active" data-mode="DE" data-speed="20">DE (20)</button>
                     <button class="mode-btn" data-mode="EU" data-speed="25">EU (25)</button>
                     <button class="mode-btn" data-mode="US" data-speed="35" style="color: var(--red)">US (35)</button>
                 </div>
+
+                <div class="toggle-row">
+                    <span><i class="fa-solid fa-compass" style="color: var(--accent); margin-right: 8px;"></i> Tempomat (Cruise)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="cruiseCheck">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
                 <button class="btn btn-tune" id="flashBtn"><i class="fa-solid fa-microchip"></i> Register beschreiben</button>
             </div>
 
-            <div class="log-box" id="logBox">System bereit. Warte auf Eingabe...</div>
+            <div class="log-box" id="logBox">Initialisiert. Bereit für Koppelung...</div>
         </main>
     </div>
 
     <script>
-        // BLE Konfigurationen
         const SCOOTER_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
         const SCOOTER_WRITE_UUID   = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
-        const SCOOTER_READ_UUID    = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
 
-        let gattServer = null;
         let writeCharacteristic = null;
         let isDemoMode = false;
         let driveInterval = null;
+        let currentUnit = 'kmh'; // oder 'mph'
 
         // DOM Elemente
         const connectBtn = document.getElementById('connectBtn');
         const demoBtn = document.getElementById('demoBtn');
         const flashBtn = document.getElementById('flashBtn');
+        const panicBtn = document.getElementById('panicBtn');
         const connectMenu = document.getElementById('connectMenu');
         const tuningControls = document.getElementById('tuningControls');
         const statusIndicator = document.getElementById('statusIndicator');
         const statusText = document.getElementById('statusText');
         const speedo = document.getElementById('speedo');
         const speedRing = document.getElementById('speedRing');
+        const unitText = document.getElementById('unitText');
         const modeButtons = document.querySelectorAll('.mode-btn');
         const themeBtn = document.getElementById('themeBtn');
+        const infoToggleBtn = document.getElementById('infoToggleBtn');
+        const infoPanel = document.getElementById('infoPanel');
         const logBox = document.getElementById('logBox');
+        const cruiseCheck = document.getElementById('cruiseCheck');
 
+        // Telemetrie DOM
         const batteryVal = document.getElementById('batteryVal');
         const tempVal = document.getElementById('tempVal');
         const rangeVal = document.getElementById('rangeVal');
+        const voltVal = document.getElementById('voltVal');
+        const ampVal = document.getElementById('ampVal');
+        const cyclesVal = document.getElementById('cyclesVal');
 
         function log(msg) { logBox.innerHTML += `<br>> ${msg}`; logBox.scrollTop = logBox.scrollHeight; }
 
+        // Info Panel umschalten
+        infoToggleBtn.addEventListener('click', () => infoPanel.classList.toggle('hidden'));
+
+        // Theme Umschalter
         themeBtn.addEventListener('click', () => {
             document.body.classList.toggle('light-mode');
             themeBtn.innerHTML = document.body.classList.contains('light-mode') ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
         });
 
+        // Einheit wechseln (KM/H zu MPH)
+        speedRing.addEventListener('click', () => {
+            if(currentUnit === 'kmh') {
+                currentUnit = 'mph';
+                unitText.innerText = 'MPH';
+                log("Einheit auf Imperial (MPH) geändert.");
+            } else {
+                currentUnit = 'kmh';
+                unitText.innerText = 'KM/H';
+                log("Einheit auf Metrisch (KM/H) geändert.");
+            }
+            updateMetricsDisplay();
+        });
+
+        // Modus Knöpfe
         modeButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 modeButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                if (isDemoMode) {
-                    startDemoDriving(parseInt(btn.getAttribute('data-speed')));
-                }
+                if (isDemoMode) startDemoDriving(parseInt(btn.getAttribute('data-speed')));
             });
         });
 
-        // AKTIVIERUNG DER DASHBOARD OBERFLÄCHE
-        function activateDashboard(mode, deviceName = "") {
+        // Tempomat Event
+        cruiseCheck.addEventListener('change', () => {
+            log(`Tempomat (Cruise Control) auf: ${cruiseCheck.checked ? 'AN' : 'AUS'}`);
+        });
+
+        // DASHBOARD AKTIVIEREN
+        function activateDashboard(type, name = "") {
             connectMenu.classList.add('hidden');
-            tuningControls.classList.remove('hidden');
-            speedRing.classList.add('active');
-
-            if (mode === 'demo') {
-                isDemoMode = true;
-                statusIndicator.className = "status-indicator demo";
-                statusText.innerText = "Demo-Modus Aktiv";
-                batteryVal.innerText = "94 %";
-                tempVal.innerText = "22.8 °C";
-                rangeVal.innerText = "45 km";
-                log("Demo-Simulation gestartet. Viel Spaß beim Testen!");
-                startDemoDriving(20); // Startet mit Standard 20 km/h
-            } else {
-                isDemoMode = false;
-                statusIndicator.className = "status-indicator online";
-                statusText.innerText = deviceName;
-                batteryVal.innerText = "88 %";
-                tempVal.innerText = "24.5 °C";
-                rangeVal.innerText = "32 km";
-            }
-        }
-
-        // 1. BLUETOOTH ECHT-VERBINDUNG
-        connectBtn.addEventListener('click', async () => {
-            try {
-                log("Suche Bluetooth-Geräte mit Präfix...");
-                const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ namePrefix: 'MIScooter' }, { namePrefix: 'Ninebot' }, { namePrefix: 'Scooter' }],
-                    optionalServices: [SCOOTER_SERVICE_UUID]
-                });
-
-                statusText.innerText = "Verbinde...";
-                gattServer = await device.gatt.connect();
-                const service = await gattServer.getPrimaryService(SCOOTER_SERVICE_UUID);
-                writeCharacteristic = await service.getCharacteristic(SCOOTER_WRITE_UUID);
-                
-                log("Verbindung hergestellt. Hardware bereit.");
-                activateDashboard('real', device.name || "E-Scooter");
-
-            } catch (err) {
-                log(`Verbindung abgebrochen: ${err.message}`);
-                statusText.innerText = "System Offline";
-            }
-        });
-
-        // 2. DEMO MODUS STARTEN (HIER IST DEINE GEWÜNSCHTE DEMO!)
-        demoBtn.addEventListener('click', () => {
-            activateDashboard('demo');
-        });
-
-        // PACKET BERECHNUNG FÜR REALE HARDWARE
-        function buildPacket(register, value) {
-            let payload = [0x55, 0xAA, 0x03, 0x20, register, value & 0xFF, (value >> 8) & 0xFF];
-            let checksum = 0;
-            for (let i = 2; i < payload.length; i++) checksum += payload[i];
-            checksum = (checksum ^ 0xFFFF) & 0xFFFF;
-            payload.push(checksum & 0xFF, (checksum >> 8) & 0xFF);
-            return new Uint8Array(payload);
-        }
-
-        // REALS INJIZIEREN ODER DEMO FLASH SIMULIEREN
-        flashBtn.addEventListener('click', async () => {
-            const activeMode = document.querySelector('.mode-btn.active');
-            const targetSpeed = parseInt(activeMode.getAttribute('data-speed'));
-            const modeName = activeMode.getAttribute('data-mode');
-
-            flashBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Flashe Register...';
-            flashBtn.style.pointerEvents = 'none';
-
-            if (isDemoMode) {
-                // Demo Flash Logik
-                log(`Simuliere Flash-Vorgang für Register 0x7c mit Wert [${modeName}]`);
-                setTimeout(() => {
-                    flashBtn.innerHTML = '<i class="fa-solid fa-check"></i> Demo erfolgreich!';
-                    log(`Firmware-Limit im Demo-Modus virtuell auf ${targetSpeed} km/h gesetzt.`);
-                    
-                    setTimeout(() => {
-                        flashBtn.innerHTML = '<i class="fa-solid fa-microchip"></i> Register beschreiben';
-                        flashBtn.style.pointerEvents = 'auto';
-                        startDemoDriving(targetSpeed);
-                    }, 1500);
-                }, 2000);
-            } else {
-                // Echte Hardware Flash Logik
-                if (!writeCharacteristic) { log("Fehler: Kein Schreibkanal vorhanden."); return; }
-                let targetHex = modeName === "US" ? 0x03 : (modeName === "EU" ? 0x02 : 0x01);
-                const packet = buildPacket(0x7c, targetHex);
-                
-                try {
-                    log(`Sende Echt-Bytes an ESC: ${Array.from(packet).map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
-                    await writeCharacteristic.writeValue(packet);
-                    log("Bytes vom Scooter akzeptiert!");
-                    flashBtn.innerHTML = '<i class="fa-solid fa-check"></i> Tuning injiziert!';
-                    alert("Erfolgreich geflasht! Starte den Roller einmal neu.");
-                } catch (err) {
-                    log(`Hardware-Fehler: ${err.message}`);
-                    flashBtn.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Fehler';
-                }
-                
-                setTimeout(() => {
-                    flashBtn.innerHTML = '<i class="fa-solid fa-microchip"></i> Register beschreiben';
-                    flashBtn.style.pointerEvents = 'auto';
-                }, 2000);
-            }
-        });
-
-        // DEMO FAHRSIMULATION
-        function startDemoDriving(maxSpeed) {
-            clearInterval(driveInterval);
-            let currentSpeed = parseInt(speedo.innerText) || 0;
-
-            driveInterval = setInterval(() => {
-                let jitter
+            tuningControls.classList.remove('hidden

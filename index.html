@@ -288,4 +288,34 @@
             clearInterval(driveInterval);
             driveInterval = setInterval(() => {
                 let target = maxSpeed + (Math.random() * 0.8 - 0.4);
-                if (rawSpeedKmh < target - 1) rawSpeedKmh
+                if (rawSpeedKmh < target - 1) rawSpeedKmh += 2.0;
+                else if (rawSpeedKmh > target + 1) rawSpeedKmh -= 1.0;
+                else rawSpeedKmh = target;
+
+                totalKmSimulated += (rawSpeedKmh / 36000);
+                updateMetricsDisplay();
+                ampVal.innerText = (4 + Math.random() * 2.5).toFixed(1) + " A";
+                tempVal.innerText = (24 + (rawSpeedKmh / 6)).toFixed(1) + " °C";
+            }, 100);
+        }
+
+        function updateMetricsDisplay() {
+            if (currentUnit === 'kmh') {
+                speedo.innerText = Math.floor(rawSpeedKmh).toString().padStart(2, '0');
+                rangeVal.innerText = totalKmSimulated.toFixed(1) + " km";
+            } else {
+                speedo.innerText = Math.floor(rawSpeedKmh * 0.621371).toString().padStart(2, '0');
+                rangeVal.innerText = (totalKmSimulated * 0.621371).toFixed(1) + " mi";
+            }
+        }
+
+        resetSimBtn.addEventListener('click', () => {
+            rawSpeedKmh = 0;
+            startDemoDriving(20);
+            log("Fahrdaten-Simulation zurückgesetzt.");
+        });
+
+        startDemoDriving(20);
+    </script>
+</body>
+</html>

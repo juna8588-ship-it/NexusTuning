@@ -242,4 +242,153 @@
         // DASHBOARD AKTIVIEREN
         function activateDashboard(type, name = "") {
             connectMenu.classList.add('hidden');
-            tuningControls.classList.remove('hidden
+            tuningControls.classList.remove('hidden');
+            speedRing.classList.add('active');
+
+            if (type === 'demo') {
+                isDemoMode = true;
+                statusIndicator.className = "status-indicator demo";
+                statusText.innerText = "Demo-Modus Aktiv";
+                batteryVal.innerText = "98 %";
+                voltVal.innerText = "40.2 V";
+                ampVal.innerText = "0.0 A";
+                cyclesVal.innerText = "14";
+                log("Virtuelles System hochgefahren.");
+                startDemoDriving(20);
+            } else {
+                isDemoMode = false;
+                statusIndicator.className = "status-indicator online";
+                statusText.innerText = name;
+                batteryVal.innerText = "85 %";
+                voltVal.innerText = "38.9 V";
+                cyclesVal.innerText = "42";
+            }
+        }
+
+        // 1. REALE VERBINDUNG
+        connectBtn.addEventListener('click', async () => {
+            try {
+                log("Scanne Kanäle...");
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'MIScooter' }, { namePrefix: 'Ninebot' }, { namePrefix: 'Scooter' }],
+                    optionalServices: [SCOOTER_SERVICE_UUID]
+                });
+
+                statusText.innerText = "Verbinde...";
+                const gattServer = await device.gatt.connect();
+                const service = await gattServer.getPrimaryService(SCOOTER_SERVICE_UUID);
+                writeCharacteristic = await service.getCharacteristic(SCOOTER_WRITE_UUID);
+                
+                log("Verbindung stabilisiert.");
+                activateDashboard('real', device.name || "Scooter");
+            } catch (err) {
+                log(`Fehler: ${err.message}`);
+                statusText.innerText = "System Offline";
+            }
+        });
+
+        // 2. DEMO REINLADEN
+        demoBtn.addEventListener('click', () => activateDashboard('demo'));
+
+        // CHECKSUM BERECHNUNG FOR HARDWARE
+        function buildPacket(register, value) {
+            let payload = [0x55, 0xAA, 0x03, 0x20, register, value & 0xFF, (value >> 8) & 0xFF];
+            let checksum = 0;
+            for (let i = 2; i < payload.length; i++) checksum += payload[i];
+            checksum = (checksum ^ 0xFFFF) & 0xFFFF;
+            payload.push(checksum & 0xFF, (checksum >> 8) & 0xFF);
+            return new Uint8Array(payload);
+        }
+
+        // FLASH-VORGANG (REALS ODER SIMULATION)
+        flashBtn.addEventListener('click', async () => {
+            const activeMode = document.querySelector('.mode-btn.active');
+            const targetSpeed = parseInt(activeMode.getAttribute('data-speed'));
+            const modeName = activeMode.getAttribute('data-mode');
+
+            flashBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Flashe...';
+            flashBtn.style.pointerEvents = 'none';
+
+            if (isDemoMode) {
+                log(`Simuliere Flash auf Register 0x7c mit Modus ${modeName}`);
+                setTimeout(() => {
+                    flashBtn.innerHTML = '<i class="fa-solid fa-microchip"></i> Register beschreiben';
+                    flashBtn.style.pointerEvents = 'auto';
+                    log("Simulation erfolgreich abgeschlossen!");
+                    startDemoDriving(targetSpeed);
+                }, 1500);
+            } else {
+                if (!writeCharacteristic) return;
+                let val = modeName === "US" ? 0x03 : (modeName === "EU" ? 0x02 : 0x01);
+                try {
+                    await writeCharacteristic.writeValue(buildPacket(0x7c, val));
+                    log("Flash-Bytes erfolgreich gesendet.");
+                } catch(e) { log(`Fehler: ${e.message}`); }
+                flashBtn.innerHTML = '<i class="fa-solid fa-microchip"></i> Register beschreiben';
+                flashBtn.style.pointerEvents = 'auto';
+            }
+        });
+
+        // PANIK BUTTON LOGIK
+        panicBtn.addEventListener('click', async () => {
+            log("🚨 PANIK MODUS GEZÜNDET! Überschreibe alle Tuning-Register!");
+            
+            // UI sofort auf DE (20 km/h) zurücksetzen
+            modeButtons.forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-mode="DE"]').classList.add('active');
+
+            if (isDemoMode) {
+                startDemoDriving(20);
+                log("System im Demo-Modus instant drosselt.");
+            } else {
+                if (writeCharacteristic) {
+                    try {
+                        await writeCharacteristic.writeValue(buildPacket(0x7c, 0x01)); // Sende legalen DE-Wert
+                        log("Echtzeit-Drossel erfolgreich!");
+                    } catch(e) { log("Panik-Flash gescheitert!"); }
+                }
+            }
+            alert("PANIK MODUS: Scooter wurde auf Werkseinstellungen (20 km/h) gedrosselt!");
+        });
+
+        // DEMO FAHRSIMULATION
+        let rawSpeedKmh = 0;
+        let totalKmSimulated = 45.2;
+
+        function startDemoDriving(maxSpeed) {
+            clearInterval(driveInterval);
+            driveInterval = setInterval(() => {
+                let jitterLimit = maxSpeed + (Math.random() * 1.0 - 0.5);
+                
+                if (rawSpeedKmh < jitterLimit - 1) {
+                    rawSpeedKmh += Math.random() * 2.5; // Schnelles Gasgeben
+                    ampVal.innerText = (15 + Math.random() * 10).toFixed(1) + " A";
+                } else if (rawSpeedKmh > jitterLimit + 1) {
+                    rawSpeedKmh -= Math.random() * 1.5;
+                    ampVal.innerText = "-2.1 A"; // Rekuperation (Bremsenergie)
+                } else {
+                    rawSpeedKmh = jitterLimit;
+                    ampVal.innerText = (3 + Math.random() * 2).toFixed(1) + " A";
+                }
+
+                totalKmSimulated += (rawSpeedKmh / 36000); // Distanz hochzählen
+                updateMetricsDisplay();
+                
+                tempVal.innerText = (21 + (rawSpeedKmh / 5) + Math.random() * 0.2).toFixed(1) + " °C";
+            }, 100);
+        }
+
+        // Konvertierungs-Helfer für Einheiten
+        function updateMetricsDisplay() {
+            if (currentUnit === 'kmh') {
+                speedo.innerText = Math.floor(rawSpeedKmh).toString().padStart(2, '0');
+                rangeVal.innerText = totalKmSimulated.toFixed(1) + " km";
+            } else {
+                let speedMph = rawSpeedKmh * 0.621371;
+                speedo.innerText = Math.floor(speedMph).toString().padStart(2, '0');
+                rangeVal.innerText = (totalKmSimulated * 0.621371).toFixed(1) + " mi";
+            }
+        }
+    </script>
+</body>
+</html>

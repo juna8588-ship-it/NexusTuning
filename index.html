@@ -30,9 +30,9 @@
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; margin: 0; padding: 0; transition: background-color 0.2s, color 0.2s; }
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 1rem; overflow: hidden; }
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 1rem; overflow-x: hidden; }
         
-        /* STARTBILDSCHIRM (SPLASH SCREEN) */
+        /* SPLASH SCREEN (STARTBILDSCHIRM) */
         #splash-screen {
             position: fixed;
             top: 0;
@@ -74,7 +74,7 @@
             background: linear-gradient(90deg, var(--accent), #8b5cf6);
             box-shadow: 0 0 10px var(--accent);
             border-radius: 10px;
-            animation: loadApp 2.5s forwards cubic-bezier(0.1, 0.8, 0.3, 1);
+            animation: loadApp 2.3s forwards cubic-bezier(0.1, 0.8, 0.3, 1);
         }
 
         .splash-version {
@@ -95,7 +95,7 @@
             100% { width: 100%; }
         }
 
-        /* HAUPT APP INHALT */
+        /* HAUPT APP */
         .app-wrapper { width: 100%; max-width: 430px; display: flex; flex-direction: column; gap: 1rem; opacity: 0; transform: scale(0.96); transition: opacity 0.6s ease, transform 0.6s ease; }
         .app-ready { opacity: 1; transform: scale(1); }
         
@@ -211,7 +211,7 @@
     </div>
 
     <script>
-        // Startbildschirm Logic
+        // Startbildschirm Timer
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 const splash = document.getElementById('splash-screen');
@@ -220,8 +220,7 @@
                 splash.style.opacity = '0';
                 splash.style.visibility = 'hidden';
                 content.classList.add('app-ready');
-                document.body.style.overflow = 'auto';
-            }, 2500); // 2.5 Sekunden Ladezeit
+            }, 2300);
         });
 
         const SCOOTER_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
@@ -264,7 +263,6 @@
         speedRing.addEventListener('click', () => {
             currentUnit = currentUnit === 'kmh' ? 'mph' : 'kmh';
             unitText.innerText = currentUnit === 'kmh' ? 'KM/H' : 'MPH';
-            log(`Einheit auf ${unitText.innerText} geändert.`);
             updateMetricsDisplay();
         });
 
@@ -276,36 +274,28 @@
             });
         });
 
-        cruiseCheck.addEventListener('change', () => {
-            log(`Tempomat-Register: ${cruiseCheck.checked ? '0x01 (AKTIV)' : '0x00 (INAKTIV)'}`);
-        });
-
         connectBtn.addEventListener('click', async () => {
             try {
-                log("Öffne Bluetooth-Modul für ALLE sichtbaren Signale...");
+                log("Öffne Bluetooth-Modul...");
                 const device = await navigator.bluetooth.requestDevice({
                     acceptAllDevices: true,
                     optionalServices: [SCOOTER_SERVICE_UUID]
                 });
 
-                log(`Verbunden mit Gerät: ${device.name || "Unbekannte Hardware"}`);
+                log(`Verbunden mit: ${device.name || "E-Scooter"}`);
                 statusIndicator.className = "status-bar online";
                 statusText.innerText = device.name || "Verbunden";
                 isDemoMode = false;
 
-                log("Lese GATT-Services aus...");
                 const gattServer = await device.gatt.connect();
                 const service = await gattServer.getPrimaryService(SCOOTER_SERVICE_UUID).catch(() => null);
                 
                 if (service) {
                     writeCharacteristic = await service.getCharacteristic(SCOOTER_WRITE_UUID).catch(() => null);
-                    log("Passendes E-Scooter Firmware-Register gefunden!");
-                } else {
-                    log("Warnung: Keine kompatiblen Controller-Register auf diesem Gerät.");
+                    log("Motor-Register gefunden!");
                 }
-
             } catch (err) {
-                log(`Meldung: ${err.message}`);
+                log(`Fehler: ${err.message}`);
             }
         });
 
@@ -326,61 +316,46 @@
             flashBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Injektiere...';
             flashBtn.style.pointerEvents = 'none';
 
-            if (isDemoMode) {
-                log(`Simuliere Flash-Prozess auf Register 0x7c mit Wert: ${modeName}`);
-                setTimeout(() => {
-                    flashBtn.innerHTML = '<i class="fa-solid fa-microchip"></i> Register beschreiben';
-                    flashBtn.style.pointerEvents = 'auto';
-                    log(`Erfolgreich! Virtuelles Tempolimit auf ${targetSpeed} angehoben.`);
-                    startDemoDriving(targetSpeed);
-                }, 1200);
-            } else {
-                if (!writeCharacteristic) {
-                    log("Fehler: Gerät besitzt kein beschreibbares Motor-Register.");
-                    flashBtn.innerHTML = '<i class="fa-solid fa-microchip"></i> Register beschreiben';
-                    flashBtn.style.pointerEvents = 'auto';
-                    return;
-                }
-                let hexVal = modeName === "US" ? 0x03 : (modeName === "EU" ? 0x02 : 0x01);
-                try {
-                    await writeCharacteristic.writeValue(buildPacket(0x7c, hexVal));
-                    log("Echte Firmware-Bytes erfolgreich übertragen!");
-                } catch(e) { log(`Fehler beim Schreiben: ${e.message}`); }
+            setTimeout(async () => {
                 flashBtn.innerHTML = '<i class="fa-solid fa-microchip"></i> Register beschreiben';
                 flashBtn.style.pointerEvents = 'auto';
-            }
+                
+                if (isDemoMode) {
+                    log(`Virtuelles Limit auf ${targetSpeed} km/h gesetzt.`);
+                    startDemoDriving(targetSpeed);
+                } else if (writeCharacteristic) {
+                    let hexVal = modeName === "US" ? 0x03 : (modeName === "EU" ? 0x02 : 0x01);
+                    try {
+                        await writeCharacteristic.writeValue(buildPacket(0x7c, hexVal));
+                        log("Bytes erfolgreich an Hardware übertragen!");
+                    } catch(e) { log("Fehler beim Senden."); }
+                }
+            }, 1200);
         });
 
         panicBtn.addEventListener('click', async () => {
-            log("🚨 PANIK BUTTON GEKICKT: Überschreibe alle Tuning-Werte!");
             modeButtons.forEach(b => b.classList.remove('active'));
             document.querySelector('[data-mode="DE"]').classList.add('active');
             
             if (isDemoMode) {
                 startDemoDriving(20);
-                log("Simulierter Scooter sofort gedrosselt.");
-            } else {
-                if (writeCharacteristic) {
-                    try {
-                        await writeCharacteristic.writeValue(buildPacket(0x7c, 0x01));
-                        log("Hardware erfolgreich auf 20 km/h gelockt!");
-                    } catch(e) { log("Hardware-Drosselung gescheitert!"); }
-                }
+            } else if (writeCharacteristic) {
+                try { await writeCharacteristic.writeValue(buildPacket(0x7c, 0x01)); } catch(e) {}
             }
-            alert("PANIK MODUS: Tuning entfernt! Scooter läuft jetzt mit legalen 20 km/h.");
+            alert("PANIK: Scooter auf 20 km/h gedrosselt!");
         });
 
         function startDemoDriving(maxSpeed) {
             clearInterval(driveInterval);
             driveInterval = setInterval(() => {
-                let target = maxSpeed + (Math.random() * 0.8 - 0.4);
-                if (rawSpeedKmh < target - 1) rawSpeedKmh += 2.0;
+                let target = maxSpeed + (Math.random() * 0.6 - 0.3);
+                if (rawSpeedKmh < target - 1) rawSpeedKmh += 1.5;
                 else if (rawSpeedKmh > target + 1) rawSpeedKmh -= 1.0;
                 else rawSpeedKmh = target;
 
                 totalKmSimulated += (rawSpeedKmh / 36000);
                 updateMetricsDisplay();
-                ampVal.innerText = (4 + Math.random() * 2.5).toFixed(1) + " A";
+                ampVal.innerText = (4 + Math.random() * 2).toFixed(1) + " A";
                 tempVal.innerText = (24 + (rawSpeedKmh / 6)).toFixed(1) + " °C";
             }, 100);
         }
@@ -395,12 +370,7 @@
             }
         }
 
-        resetSimBtn.addEventListener('click', () => {
-            rawSpeedKmh = 0;
-            startDemoDriving(20);
-            log("Fahrdaten-Simulation zurückgesetzt.");
-        });
-
+        resetSimBtn.addEventListener('click', () => { rawSpeedKmh = 0; startDemoDriving(20); });
         startDemoDriving(20);
     </script>
 </body>

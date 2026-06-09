@@ -1,377 +1,238 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS PRO // OS v3.0</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex Fleet Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #030712;
-            --panel: #0b1329;
-            --panel-inner: #111c44;
-            --accent: #00f0ff;
-            --green: #10b981;
-            --red: #ef4444;
-            --text: #ffffff;
-            --muted: #64748b;
-            --glow: drop-shadow(0 0 12px var(--accent));
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
         }
-
-        .light-mode {
-            --bg: #f1f5f9;
-            --panel: #ffffff;
-            --panel-inner: #f8fafc;
-            --text: #0f172a;
-            --muted: #94a3b8;
-            --glow: drop-shadow(0 4px 20px rgba(0, 240, 255, 0.25));
+        .glass {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; margin: 0; padding: 0; transition: background-color 0.2s, color 0.2s; }
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 1rem; overflow-x: hidden; }
-        
-        /* SPLASH SCREEN (STARTBILDSCHIRM) */
-        #splash-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #030712;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.5s ease, visibility 0.5s;
-        }
-
-        .splash-logo {
-            font-size: 2.5rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            background: linear-gradient(45deg, var(--accent), #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
-            animation: logoPulse 2s infinite ease-in-out;
-        }
-
-        .splash-loader-bar {
-            width: 200px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .splash-progress {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent), #8b5cf6);
-            box-shadow: 0 0 10px var(--accent);
-            border-radius: 10px;
-            animation: loadApp 2.3s forwards cubic-bezier(0.1, 0.8, 0.3, 1);
-        }
-
-        .splash-version {
-            margin-top: 15px;
-            font-size: 0.75rem;
-            color: var(--muted);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        @keyframes logoPulse {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(0,240,255,0.2)); }
-            50% { transform: scale(1.04); filter: drop-shadow(0 0 20px rgba(0,240,255,0.6)); }
-        }
-
-        @keyframes loadApp {
-            0% { width: 0%; }
-            100% { width: 100%; }
-        }
-
-        /* HAUPT APP */
-        .app-wrapper { width: 100%; max-width: 430px; display: flex; flex-direction: column; gap: 1rem; opacity: 0; transform: scale(0.96); transition: opacity 0.6s ease, transform 0.6s ease; }
-        .app-ready { opacity: 1; transform: scale(1); }
-        
-        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem; }
-        .brand { font-weight: 900; font-size: 1.5rem; letter-spacing: 1px; background: linear-gradient(45deg, var(--accent), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .nav-buttons { display: flex; gap: 8px; }
-        .nav-btn { background: var(--panel); border: 1px solid rgba(255,255,255,0.08); color: var(--text); padding: 0.6rem; border-radius: 50%; cursor: pointer; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; }
-
-        .dashboard-display { background: var(--panel); border-radius: 32px; padding: 1.5rem; text-align: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); position: relative; }
-        .speedometer { width: 180px; height: 180px; border: 4px dashed var(--accent); filter: var(--glow); border-radius: 50%; margin: 0 auto 1rem auto; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; }
-        .speed-num { font-size: 4rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
-        .speed-unit { font-size: 0.75rem; color: var(--accent); font-weight: 800; letter-spacing: 2px; margin-top: 2px; }
-        .toggle-hint { font-size: 0.6rem; color: var(--muted); position: absolute; bottom: 15px; text-transform: uppercase; }
-
-        .status-bar { display: inline-flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #f59e0b; margin-bottom: 1rem; padding: 0.4rem 1rem; background: rgba(0,0,0,0.2); border-radius: 99px; }
-        .status-bar.online { color: var(--green); }
-        .status-dot { width: 7px; height: 7px; background-color: currentColor; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .stat-card { background: var(--panel-inner); padding: 0.7rem; border-radius: 16px; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.02); }
-        .stat-card i { color: var(--accent); margin-bottom: 4px; display: block; font-size: 0.9rem; }
-        .stat-val { font-weight: 800; display: block; margin-top: 2px; font-size: 0.95rem; }
-
-        .control-panel { background: var(--panel); border-radius: 28px; padding: 1.2rem; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 1rem; }
-        
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .btn { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; border: none; padding: 1rem; border-radius: 16px; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
-        .btn:active { transform: scale(0.98); }
-        .btn-demo { background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.15); color: var(--text); box-shadow: none; }
-        .btn-tune { background: linear-gradient(135deg, #059669, var(--green)); color: #000; font-weight: 800; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
-        
-        .btn-panic { background: linear-gradient(135deg, #dc2626, var(--red)); color: white; font-weight: 900; letter-spacing: 1px; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); text-transform: uppercase; padding: 1.1rem; border: none; border-radius: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-        .mode-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .mode-btn { background: var(--panel-inner); border: 1px solid rgba(255,255,255,0.05); color: var(--text); padding: 1rem 0.5rem; border-radius: 16px; cursor: pointer; font-weight: 800; font-size: 0.9rem; }
-        .mode-btn.active { border-color: var(--accent); background: rgba(0, 240, 255, 0.08); color: var(--accent); }
-
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; background: var(--panel-inner); padding: 0.9rem 1.2rem; border-radius: 16px; font-weight: 700; font-size: 0.9rem; }
-        .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .3s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--green); }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-        .log-box { background: #000; color: #a8ffb2; font-family: monospace; font-size: 0.72rem; padding: 0.8rem; border-radius: 16px; text-align: left; max-height: 85px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
-<body>
+<body class="text-gray-100 min-h-screen flex flex-col justify-between selection:bg-emerald-500 selection:text-black">
 
-    <div id="splash-screen">
-        <div class="splash-logo"><i class="fa-solid fa-gauge-high"></i> NEXUS // OS</div>
-        <div class="splash-loader-bar">
-            <div class="splash-progress"></div>
+    <nav class="glass sticky top-0 z-40 w-full px-6 py-4 flex justify-between items-center border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+            <div class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span class="font-bold tracking-tight text-xl">APEX<span class="text-emerald-400">FLEET</span></span>
         </div>
-        <div class="splash-version">Booting System v3.0...</div>
-    </div>
+        <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-400">
+            <a href="#" class="text-white hover:text-emerald-400 transition-colors">Dashboard</a>
+            <a href="#" class="hover:text-emerald-400 transition-colors">Zoning</a>
+            <a href="#" class="hover:text-emerald-400 transition-colors">Diagnostics</a>
+            <a href="#" class="hover:text-emerald-400 transition-colors">Settings</a>
+        </div>
+        <div>
+            <span class="text-xs bg-gray-800 px-3 py-1.5 rounded-full text-gray-300 border border-gray-700">Kassel Central</span>
+        </div>
+    </nav>
 
-    <div class="app-wrapper" id="appContent">
-        <nav class="top-nav">
-            <div class="brand"><i class="fa-solid fa-gauge-high"></i> NEXUS // PRO</div>
-            <div class="nav-buttons">
-                <button class="nav-btn" id="themeBtn"><i class="fa-solid fa-moon"></i></button>
-            </div>
-        </nav>
-
-        <section class="dashboard-display">
-            <div class="status-bar" id="statusIndicator"><div class="status-dot"></div><span id="statusText">Demo-Modus Aktiv</span></div>
+    <main class="max-w-7xl w-full mx-auto p-4 md:p-8 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 space-y-6">
             
-            <div class="speedometer" id="speedRing">
-                <span class="speed-num" id="speedo">20</span>
-                <span class="speed-unit" id="unitText">KM/H</span>
-                <span class="toggle-hint">Unit Swap</span>
+            <div class="space-y-2">
+                <h1 class="text-3xl font-bold tracking-tight">Asset Optimization Console</h1>
+                <p class="text-gray-400 text-sm">Simulate diagnostic testing, efficiency modeling, and telemetry adjustments for Kassel zone fleets.</p>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card"><i class="fa-solid fa-battery-three-quarters"></i><span>Akku</span><span class="stat-val" id="batteryVal">98 %</span></div>
-                <div class="stat-card"><i class="fa-solid fa-temperature-half"></i><span>ESC Temp</span><span class="stat-val" id="tempVal">24.5 °C</span></div>
-                <div class="stat-card"><i class="fa-solid fa-road"></i><span>Distanz</span><span class="stat-val" id="rangeVal">45.2 km</span></div>
-                <div class="stat-card"><i class="fa-solid fa-bolt"></i><span>Spannung</span><span class="stat-val" id="voltVal">40.2 V</span></div>
-                <div class="stat-card"><i class="fa-solid fa-wave-square"></i><span>Strom</span><span class="stat-val" id="ampVal">4.2 A</span></div>
-                <div class="stat-card"><i class="fa-solid fa-arrows-spin"></i><span>Zyklen</span><span class="stat-val" id="cyclesVal">14</span></div>
-            </div>
-        </section>
-
-        <main class="control-panel">
-            <button class="btn btn-panic" id="panicBtn"><i class="fa-solid fa-hand"></i> PANIC BUTTON (Instant 20 km/h)</button>
-
-            <div class="mode-selector">
-                <button class="mode-btn active" data-mode="DE" data-speed="20">DE (20)</button>
-                <button class="mode-btn" data-mode="EU" data-speed="25">EU (25)</button>
-                <button class="mode-btn" data-mode="US" data-speed="35" style="color: var(--red)">US (35)</button>
+            <div class="flex border-b border-gray-800 text-sm">
+                <button onclick="switchTab('diagnostics')" id="tab-diagnostics" class="py-2.5 px-4 font-medium text-emerald-400 border-b-2 border-emerald-400 transition-all">Telemetry Testing</button>
+                <button onclick="switchTab('battery')" id="tab-battery" class="py-2.5 px-4 font-medium text-gray-400 hover:text-gray-200 transition-all">Battery Optimization</button>
+                <button onclick="switchTab('geofence')" id="tab-geofence" class="py-2.5 px-4 font-medium text-gray-400 hover:text-gray-200 transition-all">Geofence Spoofer</button>
             </div>
 
-            <div class="toggle-row">
-                <span><i class="fa-solid fa-compass" style="color: var(--accent); margin-right: 8px;"></i> Tempomat (Cruise Control)</span>
-                <label class="switch">
-                    <input type="checkbox" id="cruiseCheck">
-                    <span class="slider"></span>
-                </label>
+            <div id="content-diagnostics" class="glass rounded-2xl p-6 space-y-6 transition-all">
+                <h3 class="text-lg font-semibold text-white">Device Diagnostics & Calibration</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Target Sector</label>
+                        <select id="sector-select" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 text-gray-300">
+                            <option>Mitte / Innenstadt</option>
+                            <option>Vorderer Westen</option>
+                            <option>Südstadt</option>
+                            <option>Nord-Holland</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Asset Identifier (UID)</label>
+                        <input type="text" id="asset-id" placeholder="e.g., FL-KS-2026" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500 text-gray-100 placeholder-gray-600">
+                    </div>
+                </div>
+                <button onclick="runSimulation('Diagnostics & Calibration')" class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold py-3 px-4 rounded-lg transition-colors text-sm shadow-lg shadow-emerald-500/10">
+                    Initiate Remote Calibration
+                </button>
             </div>
 
-            <button class="btn btn-tune" id="flashBtn"><i class="fa-solid fa-microchip"></i> Register beschreiben</button>
-
-            <div class="btn-group">
-                <button class="btn" id="connectBtn"><i class="fa-brands fa-bluetooth"></i> BLE Koppelung</button>
-                <button class="btn btn-demo" id="resetSimBtn"><i class="fa-solid fa-rotate"></i> Reset Simulation</button>
+            <div id="content-battery" class="glass rounded-2xl p-6 space-y-6 hidden transition-all">
+                <h3 class="text-lg font-semibold text-white">Battery Lifespan Simulation</h3>
+                <p class="text-sm text-gray-400">Simulate advanced firmware variables to project dynamic state-of-charge profiles under eco-mode constraints.</p>
+                <button onclick="runSimulation('Battery Lifecycle Optimization')" class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold py-3 px-4 rounded-lg transition-colors text-sm">
+                    Run Lifecycle Profile
+                </button>
             </div>
 
-            <div class="log-box" id="logBox">> System geladen. Simulation läuft stabil...</div>
-        </main>
+            <div id="content-geofence" class="glass rounded-2xl p-6 space-y-6 hidden transition-all">
+                <h3 class="text-lg font-semibold text-white">Virtual Geofence Testing</h3>
+                <p class="text-sm text-gray-400">Inject coordinates to test cellular boundaries and fallback parameters for localized parking compliance.</p>
+                <button onclick="runSimulation('Geofence Fallback Verification')" class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold py-3 px-4 rounded-lg transition-colors text-sm">
+                    Test Boundary Fail-safes
+                </button>
+            </div>
+
+            <div class="glass rounded-2xl p-6 space-y-4">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Live Calibration Ticker (Kassel Regional)</h3>
+                <div class="space-y-3 divide-y divide-gray-800/50 text-xs">
+                    <div class="pt-2 flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-300 font-medium">Node KS-992 calibrated successfully.</p>
+                            <span class="text-gray-500">Mitte Sector • Operator ID #492</span>
+                        </div>
+                        <span class="text-emerald-400 font-mono">100% Signal</span>
+                    </div>
+                    <div class="pt-3 flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-300 font-medium">Battery profile response delayed but accepted.</p>
+                            <span class="text-gray-500">Südstadt Sector • Operator ID #112</span>
+                        </div>
+                        <span class="text-amber-400 font-mono">Retried</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="space-y-6">
+            
+            <div class="glass rounded-2xl p-6 flex items-center justify-between">
+                <div>
+                    <span class="text-xs uppercase font-semibold text-gray-400 tracking-wider">Kassel Node Grid</span>
+                    <h4 class="text-2xl font-bold mt-1 text-emerald-400">98.4% Operational</h4>
+                </div>
+                <div class="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+            </div>
+
+            <div class="glass rounded-2xl p-6 space-y-4">
+                <h3 class="text-base font-semibold">Report Infrastructure Anomaly</h3>
+                <div class="space-y-3">
+                    <input type="text" placeholder="Component / Node ID" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                    <textarea rows="3" placeholder="Describe the anomaly..." class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 resize-none"></textarea>
+                    <button onclick="alert('Ticket filed successfully.')" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 font-medium py-2 rounded-lg transition-colors text-xs">
+                        Dispatch Maintenance Ticket
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="glass max-w-lg w-full rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 id="modal-title" class="text-sm font-semibold uppercase tracking-wider text-emerald-400">System Log</h3>
+                <div class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></div>
+            </div>
+            <div id="log-output" class="bg-black/40 border border-gray-800 rounded-lg p-4 font-mono text-xs text-gray-400 h-48 overflow-y-auto space-y-1.5">
+                </div>
+            <div class="flex justify-end pt-2">
+                <button id="close-btn" disabled onclick="closeModal()" class="bg-gray-800 text-gray-500 cursor-not-allowed text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
+                    Processing...
+                </button>
+            </div>
+        </div>
     </div>
+
+    <footer class="border-t border-gray-900 bg-black/20 text-xs text-gray-600 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <p>&copy; 2026 Apex Mobility Infrastructure Systems. Internal Simulation Tool.</p>
+        <div class="flex space-x-4">
+            <a href="#" class="hover:text-gray-400">Terms of Operation</a>
+            <a href="#" class="hover:text-gray-400">Data Boundary Policy</a>
+        </div>
+    </footer>
 
     <script>
-        // Startbildschirm Timer
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const splash = document.getElementById('splash-screen');
-                const content = document.getElementById('appContent');
-                
-                splash.style.opacity = '0';
-                splash.style.visibility = 'hidden';
-                content.classList.add('app-ready');
-            }, 2300);
-        });
-
-        const SCOOTER_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
-        const SCOOTER_WRITE_UUID   = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
-
-        let writeCharacteristic = null;
-        let isDemoMode = true;
-        let driveInterval = null;
-        let currentUnit = 'kmh';
-        let rawSpeedKmh = 20;
-        let totalKmSimulated = 45.2;
-
-        const speedo = document.getElementById('speedo');
-        const speedRing = document.getElementById('speedRing');
-        const unitText = document.getElementById('unitText');
-        const modeButtons = document.querySelectorAll('.mode-btn');
-        const flashBtn = document.getElementById('flashBtn');
-        const panicBtn = document.getElementById('panicBtn');
-        const themeBtn = document.getElementById('themeBtn');
-        const logBox = document.getElementById('logBox');
-        const cruiseCheck = document.getElementById('cruiseCheck');
-        const connectBtn = document.getElementById('connectBtn');
-        const resetSimBtn = document.getElementById('resetSimBtn');
-        const statusIndicator = document.getElementById('statusIndicator');
-        const statusText = document.getElementById('statusText');
-
-        const batteryVal = document.getElementById('batteryVal');
-        const tempVal = document.getElementById('tempVal');
-        const rangeVal = document.getElementById('rangeVal');
-        const voltVal = document.getElementById('voltVal');
-        const ampVal = document.getElementById('ampVal');
-
-        function log(msg) { logBox.innerHTML += `<br>> ${msg}`; logBox.scrollTop = logBox.scrollHeight; }
-
-        themeBtn.addEventListener('click', () => {
-            document.body.classList.toggle('light-mode');
-            themeBtn.innerHTML = document.body.classList.contains('light-mode') ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
-        });
-
-        speedRing.addEventListener('click', () => {
-            currentUnit = currentUnit === 'kmh' ? 'mph' : 'kmh';
-            unitText.innerText = currentUnit === 'kmh' ? 'KM/H' : 'MPH';
-            updateMetricsDisplay();
-        });
-
-        modeButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                modeButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                if (isDemoMode) startDemoDriving(parseInt(btn.getAttribute('data-speed')));
+        function switchTab(tabId) {
+            const tabs = ['diagnostics', 'battery', 'geofence'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const content = document.getElementById(`content-${t}`);
+                if (t === tabId) {
+                    btn.classList.add('text-emerald-400', 'border-b-2', 'border-emerald-400');
+                    btn.classList.remove('text-gray-400');
+                    content.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('text-emerald-400', 'border-b-2', 'border-emerald-400');
+                    btn.classList.add('text-gray-400');
+                    content.classList.add('hidden');
+                }
             });
-        });
-
-        connectBtn.addEventListener('click', async () => {
-            try {
-                log("Öffne Bluetooth-Modul...");
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: [SCOOTER_SERVICE_UUID]
-                });
-
-                log(`Verbunden mit: ${device.name || "E-Scooter"}`);
-                statusIndicator.className = "status-bar online";
-                statusText.innerText = device.name || "Verbunden";
-                isDemoMode = false;
-
-                const gattServer = await device.gatt.connect();
-                const service = await gattServer.getPrimaryService(SCOOTER_SERVICE_UUID).catch(() => null);
-                
-                if (service) {
-                    writeCharacteristic = await service.getCharacteristic(SCOOTER_WRITE_UUID).catch(() => null);
-                    log("Motor-Register gefunden!");
-                }
-            } catch (err) {
-                log(`Fehler: ${err.message}`);
-            }
-        });
-
-        function buildPacket(register, value) {
-            let payload = [0x55, 0xAA, 0x03, 0x20, register, value & 0xFF, (value >> 8) & 0xFF];
-            let checksum = 0;
-            for (let i = 2; i < payload.length; i++) checksum += payload[i];
-            checksum = (checksum ^ 0xFFFF) & 0xFFFF;
-            payload.push(checksum & 0xFF, (checksum >> 8) & 0xFF);
-            return new Uint8Array(payload);
         }
 
-        flashBtn.addEventListener('click', async () => {
-            const activeMode = document.querySelector('.mode-btn.active');
-            const targetSpeed = parseInt(activeMode.getAttribute('data-speed'));
-            const modeName = activeMode.getAttribute('data-mode');
-
-            flashBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Injektiere...';
-            flashBtn.style.pointerEvents = 'none';
-
-            setTimeout(async () => {
-                flashBtn.innerHTML = '<i class="fa-solid fa-microchip"></i> Register beschreiben';
-                flashBtn.style.pointerEvents = 'auto';
-                
-                if (isDemoMode) {
-                    log(`Virtuelles Limit auf ${targetSpeed} km/h gesetzt.`);
-                    startDemoDriving(targetSpeed);
-                } else if (writeCharacteristic) {
-                    let hexVal = modeName === "US" ? 0x03 : (modeName === "EU" ? 0x02 : 0x01);
-                    try {
-                        await writeCharacteristic.writeValue(buildPacket(0x7c, hexVal));
-                        log("Bytes erfolgreich an Hardware übertragen!");
-                    } catch(e) { log("Fehler beim Senden."); }
-                }
-            }, 1200);
-        });
-
-        panicBtn.addEventListener('click', async () => {
-            modeButtons.forEach(b => b.classList.remove('active'));
-            document.querySelector('[data-mode="DE"]').classList.add('active');
+        function runSimulation(processName) {
+            const assetId = document.getElementById('asset-id').value || 'GENERIC-NODE';
+            const sector = document.getElementById('sector-select').value;
             
-            if (isDemoMode) {
-                startDemoDriving(20);
-            } else if (writeCharacteristic) {
-                try { await writeCharacteristic.writeValue(buildPacket(0x7c, 0x01)); } catch(e) {}
+            const overlay = document.getElementById('modal-overlay');
+            const title = document.getElementById('modal-title');
+            const output = document.getElementById('log-output');
+            const closeBtn = document.getElementById('close-btn');
+
+            title.innerText = `Executing: ${processName}`;
+            output.innerHTML = '';
+            closeBtn.disabled = true;
+            closeBtn.classList.add('text-gray-500', 'cursor-not-allowed');
+            closeBtn.classList.remove('text-white', 'bg-emerald-500', 'hover:bg-emerald-400');
+            closeBtn.innerText = 'Processing...';
+            
+            overlay.classList.remove('hidden');
+
+            const logs = [
+                `[INFO] Initializing handshake sequence for asset: ${assetId}`,
+                `[INFO] Querying localization metrics for region: ${sector}`,
+                `[DEBUG] Establishing TLS 1.3 socket boundary fallback...`,
+                `[DEBUG] Sending diagnostic heartbeat packet...`,
+                `[SUCCESS] Response received from node in 14ms.`,
+                `[INFO] Commencing systemic variable adjustments...`,
+                `[SUCCESS] Operational parameter synchronizations standard. Execution complete.`
+            ];
+
+            let i = 0;
+            function printLog() {
+                if (i < logs.length) {
+                    const line = document.createElement('p');
+                    line.className = logs[i].includes('SUCCESS') ? 'text-emerald-400' : logs[i].includes('DEBUG') ? 'text-gray-500' : 'text-gray-300';
+                    line.innerText = logs[i];
+                    output.appendChild(line);
+                    output.scrollTop = output.scrollHeight;
+                    i++;
+                    setTimeout(printLog, 600);
+                } else {
+                    closeBtn.disabled = false;
+                    closeBtn.classList.remove('text-gray-500', 'cursor-not-allowed', 'bg-gray-800');
+                    closeBtn.classList.add('text-black', 'bg-emerald-500', 'hover:bg-emerald-400');
+                    closeBtn.innerText = 'Acknowledge';
+                }
             }
-            alert("PANIK: Scooter auf 20 km/h gedrosselt!");
-        });
-
-        function startDemoDriving(maxSpeed) {
-            clearInterval(driveInterval);
-            driveInterval = setInterval(() => {
-                let target = maxSpeed + (Math.random() * 0.6 - 0.3);
-                if (rawSpeedKmh < target - 1) rawSpeedKmh += 1.5;
-                else if (rawSpeedKmh > target + 1) rawSpeedKmh -= 1.0;
-                else rawSpeedKmh = target;
-
-                totalKmSimulated += (rawSpeedKmh / 36000);
-                updateMetricsDisplay();
-                ampVal.innerText = (4 + Math.random() * 2).toFixed(1) + " A";
-                tempVal.innerText = (24 + (rawSpeedKmh / 6)).toFixed(1) + " °C";
-            }, 100);
+            printLog();
         }
 
-        function updateMetricsDisplay() {
-            if (currentUnit === 'kmh') {
-                speedo.innerText = Math.floor(rawSpeedKmh).toString().padStart(2, '0');
-                rangeVal.innerText = totalKmSimulated.toFixed(1) + " km";
-            } else {
-                speedo.innerText = Math.floor(rawSpeedKmh * 0.621371).toString().padStart(2, '0');
-                rangeVal.innerText = (totalKmSimulated * 0.621371).toFixed(1) + " mi";
-            }
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.add('hidden');
         }
-
-        resetSimBtn.addEventListener('click', () => { rawSpeedKmh = 0; startDemoDriving(20); });
-        startDemoDriving(20);
     </script>
 </body>
 </html>
